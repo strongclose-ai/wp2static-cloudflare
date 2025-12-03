@@ -207,12 +207,14 @@ class ArchiveCreator {
         }
 
         // Get all table names with proper escaping
+        // Note: This uses WordPress's SHOW TABLES, so table names are from WP database
         $tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_N );
 
         foreach ( $tables as $table ) {
             $table_name = $table[0];
 
             // Escape table name for backtick quotes
+            // (backticks are doubled to escape them in MySQL identifiers)
             $escaped_table = '`' . str_replace( '`', '``', $table_name ) . '`';
 
             // Get CREATE TABLE statement
@@ -233,6 +235,7 @@ class ArchiveCreator {
             while ( true ) {
                 // Note: Table name is manually escaped with backticks above
                 // and comes from SHOW TABLES (WordPress's own tables)
+                // This is safe as the table name is from WordPress DB, not user input
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 $rows = $wpdb->get_results(
                     $wpdb->prepare(

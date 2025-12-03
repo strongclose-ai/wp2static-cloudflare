@@ -137,6 +137,7 @@ class APIClient {
                     throw new WP2StaticException( 'Failed to open file: ' . $file_path );
                 }
 
+                // Note: Guzzle will close the file handle after the request completes
                 $multipart[] = [
                     'name' => 'file',
                     'contents' => $file_handle,

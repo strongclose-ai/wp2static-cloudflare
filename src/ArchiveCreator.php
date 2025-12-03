@@ -226,11 +226,9 @@ class ArchiveCreator {
             $escaped_table = '`' . str_replace( '`', '``', $table_name ) . '`';
 
             // Get CREATE TABLE statement
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $create_table = $wpdb->get_row(
-                $wpdb->prepare(
-                    'SHOW CREATE TABLE %s',
-                    $escaped_table
-                ),
+                "SHOW CREATE TABLE {$escaped_table}",
                 ARRAY_N
             );
 
@@ -243,6 +241,7 @@ class ArchiveCreator {
             $limit = 100; // Process 100 rows at a time
 
             while ( true ) {
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 $rows = $wpdb->get_results(
                     $wpdb->prepare(
                         "SELECT * FROM {$escaped_table} LIMIT %d OFFSET %d",

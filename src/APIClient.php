@@ -136,6 +136,9 @@ class APIClient {
                     'contents' => fopen( $file_path, 'r' ),
                     'filename' => basename( $file_path ),
                 ];
+                if ( ! $multipart[ count( $multipart ) - 1 ]['contents'] ) {
+                    throw new WP2StaticException( 'Failed to open file: ' . $file_path );
+                }
                 $options['multipart'] = $multipart;
             } else {
                 $options['json'] = $params;

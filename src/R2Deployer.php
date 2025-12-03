@@ -147,18 +147,8 @@ class R2Deployer {
         ];
 
         foreach ( $options_to_save as $option ) {
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            // phpstan-ignore-next-line
-            $value = isset( $_POST[ $option ] ) ?
-                sanitize_text_field( wp_unslash( $_POST[ $option ] ) ) : '';
-
-            // Encrypt JWT token
-            if ( $option === 'r2JwtToken' && ! empty( $value ) ) {
-                $value = CoreOptions::encrypt_decrypt( 'encrypt', $value );
-            }
-
-            // Handle textarea fields
-            if ( in_array(
+            // Handle textarea fields differently
+            $is_textarea = in_array(
                 $option,
                 [
                     'r2ThemesToInclude',
@@ -166,11 +156,23 @@ class R2Deployer {
                     'r2PluginsToInclude',
                     'r2PluginsToExclude',
                 ]
-            ) ) {
+            );
+
+            if ( $is_textarea ) {
                 // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
                 // phpstan-ignore-next-line
                 $value = isset( $_POST[ $option ] ) ?
                     sanitize_textarea_field( wp_unslash( $_POST[ $option ] ) ) : '';
+            } else {
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                // phpstan-ignore-next-line
+                $value = isset( $_POST[ $option ] ) ?
+                    sanitize_text_field( wp_unslash( $_POST[ $option ] ) ) : '';
+            }
+
+            // Encrypt JWT token
+            if ( $option === 'r2JwtToken' && ! empty( $value ) ) {
+                $value = CoreOptions::encrypt_decrypt( 'encrypt', $value );
             }
 
             CoreOptions::save( $option, $value );

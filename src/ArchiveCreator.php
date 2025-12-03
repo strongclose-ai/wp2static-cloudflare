@@ -241,6 +241,8 @@ class ArchiveCreator {
             $limit = 100; // Process 100 rows at a time
 
             while ( true ) {
+                // Note: Table name is manually escaped with backticks above
+                // and comes from SHOW TABLES (WordPress's own tables)
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 $rows = $wpdb->get_results(
                     $wpdb->prepare(
@@ -292,18 +294,30 @@ class ArchiveCreator {
         $tar_file = $output_path . '.tar';
         $gzip_file = $output_path . '.tar.gz';
 
-        // Create tar archive
-        $phar = new \PharData( $tar_file );
-        $phar->buildFromDirectory( $temp_dir );
+        try {
+            // Create tar archive
+            $phar = new \PharData( $tar_file );
+            $phar->buildFromDirectory( $temp_dir );
 
-        // Compress to gzip
-        $phar->compress( \Phar::GZ );
+            // Compress to gzip
+            $phar->compress( \Phar::GZ );
 
-        // Remove uncompressed tar
-        unlink( $tar_file );
+            // Remove uncompressed tar
+            unlink( $tar_file );
 
-        WsLog::l( 'Created GZIP archive: ' . $gzip_file );
-        return $gzip_file;
+            WsLog::l( 'Created GZIP archive: ' . $gzip_file );
+            return $gzip_file;
+        } catch ( \Exception $e ) {
+            // Clean up on error
+            if ( file_exists( $tar_file ) ) {
+                unlink( $tar_file );
+            }
+            throw new WP2StaticException(
+                'Failed to create GZIP archive: ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
     }
 
     /**
@@ -313,21 +327,22 @@ class ArchiveCreator {
      * @param string $dst Destination directory
      */
     private static function recursiveCopy( string $src, string $dst ) : void {
-        $dir = opendir( $src );
-        if ( ! $dir ) {
-            return;
-        }
         wp_mkdir_p( $dst );
 
-        while ( false !== ( $file = readdir( $dir ) ) ) {
-            if ( ( $file != '.' ) && ( $file != '..' ) ) {
-                if ( is_dir( $src . '/' . $file ) ) {
-                    self::recursiveCopy( $src . '/' . $file, $dst . '/' . $file );
-                } else {
-                    copy( $src . '/' . $file, $dst . '/' . $file );
-                }
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator( $src, RecursiveDirectoryIterator::SKIP_DOTS ),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ( $iterator as $item ) {
+            $dest_path = $dst . DIRECTORY_SEPARATOR .
+                $iterator->getSubPathName();
+
+            if ( $item->isDir() ) {
+                wp_mkdir_p( $dest_path );
+            } else {
+                copy( $item->getRealPath(), $dest_path );
             }
         }
-        closedir( $dir );
     }
 }

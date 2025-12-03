@@ -93,13 +93,8 @@ class ArchiveCreator {
      * @throws WP2StaticException
      */
     private static function createThemesArchive( string $temp_dir ) : void {
-        $themes_to_include = CoreOptions::getValue( 'r2ThemesToInclude' );
+        // Get exclusion list from settings
         $themes_to_exclude = CoreOptions::getValue( 'r2ThemesToExclude' );
-
-        if ( ! $themes_to_include && ! $themes_to_exclude ) {
-            // Include all themes by default
-            $themes_to_include = 'all';
-        }
 
         $themes_path = get_theme_root();
         $themes_zip_path = $temp_dir . '/themes.zip';
@@ -150,13 +145,8 @@ class ArchiveCreator {
      * @throws WP2StaticException
      */
     private static function createPluginsArchive( string $temp_dir ) : void {
-        $plugins_to_include = CoreOptions::getValue( 'r2PluginsToInclude' );
+        // Get exclusion list from settings
         $plugins_to_exclude = CoreOptions::getValue( 'r2PluginsToExclude' );
-
-        if ( ! $plugins_to_include && ! $plugins_to_exclude ) {
-            // Include all plugins by default
-            $plugins_to_include = 'all';
-        }
 
         $plugins_path = WP_PLUGIN_DIR;
         $plugins_zip_path = $temp_dir . '/plugins.zip';

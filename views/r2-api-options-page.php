@@ -10,9 +10,7 @@ $options = [
     'r2JwtToken' => CoreOptions::getValue( 'r2JwtToken' ),
     'r2SiteId' => CoreOptions::getValue( 'r2SiteId' ),
     'r2SiteName' => CoreOptions::getValue( 'r2SiteName' ),
-    'r2ThemesToInclude' => CoreOptions::getValue( 'r2ThemesToInclude' ),
     'r2ThemesToExclude' => CoreOptions::getValue( 'r2ThemesToExclude' ),
-    'r2PluginsToInclude' => CoreOptions::getValue( 'r2PluginsToInclude' ),
     'r2PluginsToExclude' => CoreOptions::getValue( 'r2PluginsToExclude' ),
 ];
 
@@ -26,7 +24,11 @@ if ( ! empty( $options['r2JwtToken'] ) ) {
 <div class="wrap">
     <h1>R2 API Deployment Settings</h1>
 
-    <?php if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] === 'true' ) : ?>
+    <?php
+    $settings_updated = isset( $_GET['settings-updated'] ) ?
+        sanitize_text_field( wp_unslash( $_GET['settings-updated'] ) ) : '';
+    if ( $settings_updated === 'true' ) :
+        ?>
         <div class="notice notice-success is-dismissible">
             <p>Settings saved successfully!</p>
         </div>

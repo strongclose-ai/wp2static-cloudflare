@@ -10,6 +10,7 @@ class R2Deployer {
      * Deploy to R2 via API
      *
      * @param string $processed_site_path Path to processed site
+     *                                     (unused - uses ProcessedSite::getPath())
      * @throws WP2StaticException
      * @throws \Exception
      */
@@ -140,9 +141,7 @@ class R2Deployer {
             'r2JwtToken',
             'r2SiteId',
             'r2SiteName',
-            'r2ThemesToInclude',
             'r2ThemesToExclude',
-            'r2PluginsToInclude',
             'r2PluginsToExclude',
         ];
 
@@ -150,12 +149,7 @@ class R2Deployer {
             // Handle textarea fields differently
             $is_textarea = in_array(
                 $option,
-                [
-                    'r2ThemesToInclude',
-                    'r2ThemesToExclude',
-                    'r2PluginsToInclude',
-                    'r2PluginsToExclude',
-                ]
+                [ 'r2ThemesToExclude', 'r2PluginsToExclude' ]
             );
 
             if ( $is_textarea ) {

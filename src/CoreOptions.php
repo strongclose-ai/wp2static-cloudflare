@@ -378,27 +378,10 @@ class CoreOptions {
             ),
             self::makeOptionSpec(
                 'array',
-                'r2ThemesToInclude',
-                '1',
-                'Themes to Include',
-                'Leave empty to include all themes, or list specific theme directories to include.',
-                ''
-            ),
-            self::makeOptionSpec(
-                'array',
                 'r2ThemesToExclude',
                 '1',
                 'Themes to Exclude',
                 'List theme directories to exclude from the deployment.',
-                ''
-            ),
-            self::makeOptionSpec(
-                'array',
-                'r2PluginsToInclude',
-                '1',
-                'Plugins to Include',
-                'Leave empty to include all plugins, or list specific plugin ' .
-                'directories to include.',
                 ''
             ),
             self::makeOptionSpec(

@@ -397,7 +397,8 @@ class CoreOptions {
                 'r2PluginsToInclude',
                 '1',
                 'Plugins to Include',
-                'Leave empty to include all plugins, or list specific plugin directories to include.',
+                'Leave empty to include all plugins, or list specific plugin ' .
+                'directories to include.',
                 ''
             ),
             self::makeOptionSpec(

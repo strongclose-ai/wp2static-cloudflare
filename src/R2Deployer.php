@@ -57,7 +57,7 @@ class R2Deployer {
             // Create archive
             WsLog::l( 'Creating deployment archive' );
             $upload_dir = wp_upload_dir();
-            $output_path = $upload_dir['basedir'] . '/wp2static-deploy-' . time();
+            $output_path = $upload_dir['basedir'] . '/wp2static-deploy-' . uniqid( '', true );
             $archive_path = ArchiveCreator::createArchive( $output_path, $processed_site_path );
 
             try {

@@ -216,32 +216,64 @@ class ArchiveCreator {
             throw new WP2StaticException( 'Failed to create db.sql file' );
         }
 
-        // Get all table names
+        // Get all table names with proper escaping
         $tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_N );
 
         foreach ( $tables as $table ) {
             $table_name = $table[0];
 
+            // Escape table name for backtick quotes
+            $escaped_table = '`' . str_replace( '`', '``', $table_name ) . '`';
+
             // Get CREATE TABLE statement
-            $create_table = $wpdb->get_row( "SHOW CREATE TABLE `{$table_name}`", ARRAY_N );
-            fwrite( $handle, "\n\n" . $create_table[1] . ";\n\n" );
+            $create_table = $wpdb->get_row(
+                $wpdb->prepare(
+                    'SHOW CREATE TABLE %s',
+                    $escaped_table
+                ),
+                ARRAY_N
+            );
 
-            // Get table data
-            $rows = $wpdb->get_results( "SELECT * FROM `{$table_name}`", ARRAY_A );
+            if ( $create_table ) {
+                fwrite( $handle, "\n\n" . $create_table[1] . ";\n\n" );
+            }
 
-            foreach ( $rows as $row ) {
-                $values = [];
-                foreach ( $row as $value ) {
-                    if ( $value === null ) {
-                        $values[] = 'NULL';
-                    } else {
-                        $values[] = "'" . $wpdb->_real_escape( $value ) . "'";
-                    }
-                }
-                fwrite(
-                    $handle,
-                    "INSERT INTO `{$table_name}` VALUES (" . implode( ',', $values ) . ");\n"
+            // Get table data in chunks to prevent memory exhaustion
+            $offset = 0;
+            $limit = 100; // Process 100 rows at a time
+
+            while ( true ) {
+                $rows = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$escaped_table} LIMIT %d OFFSET %d",
+                        $limit,
+                        $offset
+                    ),
+                    ARRAY_A
                 );
+
+                if ( ! $rows ) {
+                    break;
+                }
+
+                foreach ( $rows as $row ) {
+                    $values = [];
+                    foreach ( $row as $value ) {
+                        if ( $value === null ) {
+                            $values[] = 'NULL';
+                        } else {
+                            // Use esc_sql which is the recommended method
+                            $values[] = "'" . esc_sql( $value ) . "'";
+                        }
+                    }
+                    fwrite(
+                        $handle,
+                        "INSERT INTO {$escaped_table} VALUES (" .
+                        implode( ',', $values ) . ");\n"
+                    );
+                }
+
+                $offset += $limit;
             }
         }
 

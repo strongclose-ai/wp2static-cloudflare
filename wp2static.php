@@ -36,6 +36,9 @@ if ( ! class_exists( 'WP2Static\Controller' ) ) {
 
 WP2Static\Controller::init( __FILE__ );
 
+// Initialize R2 API addon
+WP2Static\R2AddonInit::init();
+
 /**
  * Define Settings link for plugin
  *

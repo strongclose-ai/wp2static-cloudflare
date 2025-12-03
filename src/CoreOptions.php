@@ -346,6 +346,68 @@ class CoreOptions {
                 'Don\'t rewrite any URLs. This may give a slight speed-up when the'
                 . ' deployment URL is the same as WordPress\'s URL.'
             ),
+
+            // R2 API Deployment options
+            self::makeOptionSpec(
+                'string',
+                'r2ApiUrl',
+                '',
+                'R2 API URL',
+                'The base URL of your R2 deployment API.'
+            ),
+            self::makeOptionSpec(
+                'password',
+                'r2JwtToken',
+                '',
+                'R2 JWT Token',
+                'JWT token for authentication with the R2 API.'
+            ),
+            self::makeOptionSpec(
+                'string',
+                'r2SiteId',
+                '',
+                'R2 Site ID',
+                'The site ID returned from the API (auto-populated).'
+            ),
+            self::makeOptionSpec(
+                'string',
+                'r2SiteName',
+                '',
+                'R2 Site Name',
+                'Name for your site in the R2 API.'
+            ),
+            self::makeOptionSpec(
+                'array',
+                'r2ThemesToInclude',
+                '1',
+                'Themes to Include',
+                'Leave empty to include all themes, or list specific theme directories to include.',
+                ''
+            ),
+            self::makeOptionSpec(
+                'array',
+                'r2ThemesToExclude',
+                '1',
+                'Themes to Exclude',
+                'List theme directories to exclude from the deployment.',
+                ''
+            ),
+            self::makeOptionSpec(
+                'array',
+                'r2PluginsToInclude',
+                '1',
+                'Plugins to Include',
+                'Leave empty to include all plugins, or list specific plugin directories to include.',
+                ''
+            ),
+            self::makeOptionSpec(
+                'array',
+                'r2PluginsToExclude',
+                '1',
+                'Plugins to Exclude',
+                'List plugin directories to exclude from the deployment.',
+                ''
+            ),
         ];
 
         $ret = [];

@@ -14,15 +14,16 @@ class ArchiveCreator {
      * Create a GZIP archive with static site, themes, plugins, and database
      *
      * @param string $output_path Path for the output GZIP file
+     * @param string $processed_site_path Path to processed site (optional, uses ProcessedSite::getPath() if not provided)
      * @return string Path to the created archive
      * @throws WP2StaticException
      */
-    public static function createArchive( string $output_path ) : string {
+    public static function createArchive( string $output_path, string $processed_site_path = '' ) : string {
         $temp_dir = self::createTempDirectory();
 
         try {
             // Copy static site files
-            self::copyStaticSite( $temp_dir );
+            self::copyStaticSite( $temp_dir, $processed_site_path );
 
             // Create themes.zip
             self::createThemesArchive( $temp_dir );
@@ -60,7 +61,8 @@ class ArchiveCreator {
      * @throws WP2StaticException
      */
     private static function createTempDirectory() : string {
-        $temp_base = sys_get_temp_dir() . '/wp2static-archive-' . time();
+        // Use uniqid for better security (avoids predictable paths)
+        $temp_base = sys_get_temp_dir() . '/wp2static-archive-' . uniqid( '', true );
         if ( ! wp_mkdir_p( $temp_base ) ) {
             throw new WP2StaticException( 'Failed to create temp directory' );
         }
@@ -71,9 +73,12 @@ class ArchiveCreator {
      * Copy static site files to temp directory
      *
      * @param string $temp_dir Temporary directory path
+     * @param string $processed_site_path Path to processed site (optional)
      */
-    private static function copyStaticSite( string $temp_dir ) : void {
-        $processed_site = ProcessedSite::getPath();
+    private static function copyStaticSite( string $temp_dir, string $processed_site_path = '' ) : void {
+        // Use provided path or fall back to ProcessedSite::getPath()
+        $processed_site = $processed_site_path ? $processed_site_path : ProcessedSite::getPath();
+        
         if ( ! is_dir( $processed_site ) ) {
             WsLog::l( 'No processed site found, skipping static site files' );
             return;
@@ -106,7 +111,17 @@ class ArchiveCreator {
 
         $exclude_list = [];
         if ( $themes_to_exclude ) {
-            $exclude_list = array_map( 'trim', explode( "\n", $themes_to_exclude ) );
+            $patterns = array_map( 'trim', explode( "\n", $themes_to_exclude ) );
+            // Validate patterns to prevent path traversal
+            foreach ( $patterns as $pattern ) {
+                // Only allow simple directory names, no path traversal or slashes
+                if ( strpos( $pattern, '..' ) === false && 
+                     strpos( $pattern, '/' ) === false && 
+                     strpos( $pattern, '\\' ) === false &&
+                     ! empty( $pattern ) ) {
+                    $exclude_list[] = $pattern;
+                }
+            }
         }
 
         $iterator = new RecursiveIteratorIterator(
@@ -158,7 +173,17 @@ class ArchiveCreator {
 
         $exclude_list = [];
         if ( $plugins_to_exclude ) {
-            $exclude_list = array_map( 'trim', explode( "\n", $plugins_to_exclude ) );
+            $patterns = array_map( 'trim', explode( "\n", $plugins_to_exclude ) );
+            // Validate patterns to prevent path traversal
+            foreach ( $patterns as $pattern ) {
+                // Only allow simple directory names, no path traversal or slashes
+                if ( strpos( $pattern, '..' ) === false && 
+                     strpos( $pattern, '/' ) === false && 
+                     strpos( $pattern, '\\' ) === false &&
+                     ! empty( $pattern ) ) {
+                    $exclude_list[] = $pattern;
+                }
+            }
         }
 
         $iterator = new RecursiveIteratorIterator(
@@ -232,6 +257,19 @@ class ArchiveCreator {
             $offset = 0;
             $limit = 100; // Process 100 rows at a time
 
+            // Get column names for this table
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $columns_result = $wpdb->get_results(
+                "SHOW COLUMNS FROM {$escaped_table}",
+                ARRAY_A
+            );
+            
+            $column_names = [];
+            foreach ( $columns_result as $column ) {
+                $column_names[] = '`' . $column['Field'] . '`';
+            }
+            $columns_sql = implode( ', ', $column_names );
+
             while ( true ) {
                 // Note: Table name is manually escaped with backticks above
                 // and comes from SHOW TABLES (WordPress's own tables)
@@ -260,9 +298,10 @@ class ArchiveCreator {
                             $values[] = "'" . esc_sql( $value ) . "'";
                         }
                     }
+                    // Include column names in INSERT for robustness
                     fwrite(
                         $handle,
-                        "INSERT INTO {$escaped_table} VALUES (" .
+                        "INSERT INTO {$escaped_table} ({$columns_sql}) VALUES (" .
                         implode( ',', $values ) . ");\n"
                     );
                 }

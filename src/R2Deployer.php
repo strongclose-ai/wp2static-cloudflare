@@ -10,7 +10,6 @@ class R2Deployer {
      * Deploy to R2 via API
      *
      * @param string $processed_site_path Path to processed site
-     *                                     (unused - uses ProcessedSite::getPath())
      * @throws WP2StaticException
      * @throws \Exception
      */
@@ -59,23 +58,25 @@ class R2Deployer {
             WsLog::l( 'Creating deployment archive' );
             $upload_dir = wp_upload_dir();
             $output_path = $upload_dir['basedir'] . '/wp2static-deploy-' . time();
-            $archive_path = ArchiveCreator::createArchive( $output_path );
+            $archive_path = ArchiveCreator::createArchive( $output_path, $processed_site_path );
 
-            // Upload to API
-            WsLog::l( 'Uploading archive to R2 API' );
-            $response = $client->updateSite( $site_id, $archive_path );
+            try {
+                // Upload to API
+                WsLog::l( 'Uploading archive to R2 API' );
+                $response = $client->updateSite( $site_id, $archive_path );
 
-            // Clean up archive
-            if ( file_exists( $archive_path ) ) {
-                unlink( $archive_path );
-            }
-
-            if ( isset( $response['status'] ) && $response['status'] === 200 ) {
-                WsLog::l( 'Successfully deployed to R2 via API' );
-            } else {
-                throw new WP2StaticException(
-                    'Deployment failed: ' . json_encode( $response )
-                );
+                if ( isset( $response['status'] ) && $response['status'] === 200 ) {
+                    WsLog::l( 'Successfully deployed to R2 via API' );
+                } else {
+                    throw new WP2StaticException(
+                        'Deployment failed: ' . json_encode( $response )
+                    );
+                }
+            } finally {
+                // Clean up archive - always runs even if upload fails
+                if ( file_exists( $archive_path ) ) {
+                    unlink( $archive_path );
+                }
             }
         } catch ( \Exception $e ) {
             WsLog::l( 'R2 deployment error: ' . $e->getMessage() );
@@ -164,8 +165,11 @@ class R2Deployer {
                     sanitize_text_field( wp_unslash( $_POST[ $option ] ) ) : '';
             }
 
-            // Encrypt JWT token
-            if ( $option === 'r2JwtToken' && ! empty( $value ) ) {
+            // Encrypt JWT token - skip if empty (keep existing token)
+            if ( $option === 'r2JwtToken' ) {
+                if ( empty( $value ) ) {
+                    continue; // Don't overwrite existing token with blank
+                }
                 $value = CoreOptions::encrypt_decrypt( 'encrypt', $value );
             }
 

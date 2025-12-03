@@ -4,6 +4,11 @@
 
 use WP2Static\CoreOptions;
 
+// Check user capability before accessing sensitive settings
+if ( ! current_user_can( 'manage_options' ) ) {
+    wp_die( esc_html__( 'You do not have permission to access this page.', 'wp2static' ) );
+}
+
 // Get current options
 $options = [
     'r2ApiUrl' => CoreOptions::getValue( 'r2ApiUrl' ),
@@ -13,11 +18,6 @@ $options = [
     'r2ThemesToExclude' => CoreOptions::getValue( 'r2ThemesToExclude' ),
     'r2PluginsToExclude' => CoreOptions::getValue( 'r2PluginsToExclude' ),
 ];
-
-// Decrypt JWT token for display (show masked)
-if ( ! empty( $options['r2JwtToken'] ) ) {
-    $options['r2JwtToken'] = CoreOptions::encrypt_decrypt( 'decrypt', $options['r2JwtToken'] );
-}
 
 ?>
 
@@ -53,7 +53,7 @@ if ( ! empty( $options['r2JwtToken'] ) ) {
                         class="regular-text"
                         placeholder="https://api.example.com"
                     />
-                    <p class="description">The base URL of your R2 deployment API.</p>
+                    <p class="description">The base URL of your R2 deployment API (must use HTTPS).</p>
                 </td>
             </tr>
             <tr>
@@ -65,11 +65,11 @@ if ( ! empty( $options['r2JwtToken'] ) ) {
                         type="password" 
                         id="r2JwtToken" 
                         name="r2JwtToken" 
-                        value="<?php echo esc_attr( $options['r2JwtToken'] ); ?>" 
+                        value="" 
                         class="regular-text"
-                        placeholder="Your JWT token"
+                        placeholder="<?php echo ! empty( $options['r2JwtToken'] ) ? '••••••••••••' : 'Your JWT token'; ?>"
                     />
-                    <p class="description">JWT token for authentication with the R2 API.</p>
+                    <p class="description">JWT token for authentication with the R2 API. Leave blank to keep current token.</p>
                 </td>
             </tr>
             <tr>
@@ -119,7 +119,7 @@ if ( ! empty( $options['r2JwtToken'] ) ) {
                         class="large-text"
                         placeholder="twentytwenty&#10;twentytwentyone"
                     ><?php echo esc_textarea( $options['r2ThemesToExclude'] ); ?></textarea>
-                    <p class="description">List theme directory names to exclude (one per line). Leave empty to include all themes.</p>
+                    <p class="description">List theme directory names to exclude (one per line, simple names only). Leave empty to include all themes.</p>
                 </td>
             </tr>
         </table>
@@ -138,7 +138,7 @@ if ( ! empty( $options['r2JwtToken'] ) ) {
                         class="large-text"
                         placeholder="akismet&#10;hello-dolly"
                     ><?php echo esc_textarea( $options['r2PluginsToExclude'] ); ?></textarea>
-                    <p class="description">List plugin directory names to exclude (one per line). Leave empty to include all plugins.</p>
+                    <p class="description">List plugin directory names to exclude (one per line, simple names only). Leave empty to include all plugins.</p>
                 </td>
             </tr>
         </table>

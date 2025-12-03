@@ -2,7 +2,7 @@
 
 namespace WP2Static;
 
-use WP2StaticGuzzle\Client;
+use WP2StaticGuzzleHttp\Client;
 
 /**
  * API Client for R2 deployment
@@ -24,6 +24,13 @@ class APIClient {
     private $client;
 
     public function __construct( string $api_url, string $jwt_token ) {
+        // Enforce HTTPS for security
+        if ( strpos( $api_url, 'https://' ) !== 0 ) {
+            throw new WP2StaticException(
+                'API URL must use HTTPS for secure communication. Got: ' . $api_url
+            );
+        }
+
         $this->api_url = rtrim( $api_url, '/' );
         $this->jwt_token = $jwt_token;
         $this->client = new Client();
@@ -42,7 +49,6 @@ class APIClient {
             'POST',
             '/api/sites/create',
             [
-                'auth' => $this->jwt_token,
                 'domain' => $domain,
                 'site_name' => $site_name,
             ]
@@ -61,9 +67,7 @@ class APIClient {
         $response = $this->request(
             'GET',
             '/api/sites/list',
-            [
-                'auth' => $this->jwt_token,
-            ]
+            []
         );
 
         return $response;
@@ -86,7 +90,6 @@ class APIClient {
             'POST',
             '/api/sites/update',
             [
-                'auth' => $this->jwt_token,
                 'site_id' => $site_id,
             ],
             $gzip_path
@@ -137,18 +140,30 @@ class APIClient {
                     throw new WP2StaticException( 'Failed to open file: ' . $file_path );
                 }
 
-                // Note: Guzzle will close the file handle after the request completes
-                $multipart[] = [
-                    'name' => 'file',
-                    'contents' => $file_handle,
-                    'filename' => basename( $file_path ),
-                ];
-                $options['multipart'] = $multipart;
+                try {
+                    // Note: Guzzle will close the file handle after the request completes
+                    $multipart[] = [
+                        'name' => 'file',
+                        'contents' => $file_handle,
+                        'filename' => basename( $file_path ),
+                    ];
+                    $options['multipart'] = $multipart;
+
+                    $response = $this->client->request( $method, $url, $options );
+                } finally {
+                    // Ensure file handle is closed even if request fails
+                    if ( is_resource( $file_handle ) ) {
+                        fclose( $file_handle );
+                    }
+                }
             } else {
                 $options['json'] = $params;
             }
 
-            $response = $this->client->request( $method, $url, $options );
+            if ( ! isset( $response ) ) {
+                $response = $this->client->request( $method, $url, $options );
+            }
+
             $body = (string) $response->getBody();
             $data = json_decode( $body, true );
 

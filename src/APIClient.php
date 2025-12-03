@@ -34,7 +34,7 @@ class APIClient {
      *
      * @param string $domain Site domain
      * @param string $site_name Site name
-     * @return array Response data
+     * @return array<string,mixed> Response data
      * @throws WP2StaticException
      */
     public function createSite( string $domain, string $site_name ) : array {
@@ -54,7 +54,7 @@ class APIClient {
     /**
      * List all sites
      *
-     * @return array Response data
+     * @return array<string,mixed> Response data
      * @throws WP2StaticException
      */
     public function listSites() : array {
@@ -74,7 +74,7 @@ class APIClient {
      *
      * @param string $site_id Site ID
      * @param string $gzip_path Path to GZIP file
-     * @return array Response data
+     * @return array<string,mixed> Response data
      * @throws WP2StaticException
      */
     public function updateSite( string $site_id, string $gzip_path ) : array {
@@ -100,9 +100,9 @@ class APIClient {
      *
      * @param string $method HTTP method
      * @param string $endpoint API endpoint
-     * @param array $params Request parameters
+     * @param array<string,string> $params Request parameters
      * @param string|null $file_path File path for upload
-     * @return array Response data
+     * @return array<string,mixed> Response data
      * @throws WP2StaticException
      */
     private function request(
@@ -145,14 +145,20 @@ class APIClient {
             $body = (string) $response->getBody();
             $data = json_decode( $body, true );
 
-            if ( json_last_error() !== JSON_ERROR_NONE ) {
+            if ( ! is_array( $data ) || json_last_error() !== JSON_ERROR_NONE ) {
                 throw new WP2StaticException( 'Invalid JSON response from API' );
             }
 
             return $data;
+        } catch ( WP2StaticException $e ) {
+            throw $e;
         } catch ( \Exception $e ) {
             WsLog::l( 'API request failed: ' . $e->getMessage() );
-            throw new WP2StaticException( 'API request failed: ' . $e->getMessage() );
+            throw new WP2StaticException(
+                'API request failed: ' . $e->getMessage(),
+                0,
+                $e
+            );
         }
     }
 }

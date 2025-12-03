@@ -45,7 +45,11 @@ class ArchiveCreator {
             if ( is_dir( $temp_dir ) ) {
                 FilesHelper::deleteDirWithFiles( $temp_dir );
             }
-            throw new WP2StaticException( 'Failed to create archive: ' . $e->getMessage() );
+            throw new WP2StaticException(
+                'Failed to create archive: ' . $e->getMessage(),
+                0,
+                $e
+            );
         }
     }
 
@@ -116,6 +120,9 @@ class ArchiveCreator {
 
         foreach ( $iterator as $file ) {
             $file_path = $file->getRealPath();
+            if ( ! $file_path ) {
+                continue;
+            }
             $relative_path = substr( $file_path, strlen( $themes_path ) + 1 );
 
             // Check if theme should be excluded
@@ -170,6 +177,9 @@ class ArchiveCreator {
 
         foreach ( $iterator as $file ) {
             $file_path = $file->getRealPath();
+            if ( ! $file_path ) {
+                continue;
+            }
             $relative_path = substr( $file_path, strlen( $plugins_path ) + 1 );
 
             // Check if plugin should be excluded
@@ -273,6 +283,9 @@ class ArchiveCreator {
      */
     private static function recursiveCopy( string $src, string $dst ) : void {
         $dir = opendir( $src );
+        if ( ! $dir ) {
+            return;
+        }
         wp_mkdir_p( $dst );
 
         while ( false !== ( $file = readdir( $dir ) ) ) {

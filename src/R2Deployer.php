@@ -11,6 +11,7 @@ class R2Deployer {
      *
      * @param string $processed_site_path Path to processed site
      * @throws WP2StaticException
+     * @throws \Exception
      */
     public static function deploy( string $processed_site_path ) : void {
         WsLog::l( 'Starting R2 API deployment' );
@@ -146,8 +147,10 @@ class R2Deployer {
         ];
 
         foreach ( $options_to_save as $option ) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            // phpstan-ignore-next-line
             $value = isset( $_POST[ $option ] ) ?
-                sanitize_text_field( $_POST[ $option ] ) : '';
+                sanitize_text_field( wp_unslash( $_POST[ $option ] ) ) : '';
 
             // Encrypt JWT token
             if ( $option === 'r2JwtToken' && ! empty( $value ) ) {
@@ -164,8 +167,10 @@ class R2Deployer {
                     'r2PluginsToExclude',
                 ]
             ) ) {
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                // phpstan-ignore-next-line
                 $value = isset( $_POST[ $option ] ) ?
-                    sanitize_textarea_field( $_POST[ $option ] ) : '';
+                    sanitize_textarea_field( wp_unslash( $_POST[ $option ] ) ) : '';
             }
 
             CoreOptions::save( $option, $value );

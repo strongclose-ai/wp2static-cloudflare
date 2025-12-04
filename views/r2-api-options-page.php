@@ -108,18 +108,36 @@ $options = [
         <h2>Theme Export Settings</h2>
         <table class="form-table">
             <tr>
-                <th scope="row">
-                    <label for="r2ThemesToExclude">Themes to Exclude</label>
-                </th>
+                <th scope="row">Themes to Exclude</th>
                 <td>
-                    <textarea 
-                        id="r2ThemesToExclude" 
-                        name="r2ThemesToExclude" 
-                        rows="5" 
-                        class="large-text"
-                        placeholder="twentytwenty&#10;twentytwentyone"
-                    ><?php echo esc_textarea( $options['r2ThemesToExclude'] ); ?></textarea>
-                    <p class="description">List theme directory names to exclude (one per line, simple names only). Leave empty to include all themes.</p>
+                    <?php
+                    $all_themes = wp_get_themes();
+                    $excluded_themes = array_filter( array_map( 'trim', explode( "\n", $options['r2ThemesToExclude'] ) ) );
+                    
+                    if ( ! empty( $all_themes ) ) :
+                        foreach ( $all_themes as $theme_key => $theme ) :
+                            $is_checked = in_array( $theme_key, $excluded_themes );
+                            ?>
+                            <fieldset>
+                                <label for="r2ThemesToExclude_<?php echo esc_attr( $theme_key ); ?>">
+                                    <input 
+                                        type="checkbox" 
+                                        id="r2ThemesToExclude_<?php echo esc_attr( $theme_key ); ?>" 
+                                        name="r2ThemesToExclude[]" 
+                                        value="<?php echo esc_attr( $theme_key ); ?>"
+                                        <?php checked( $is_checked ); ?>
+                                    />
+                                    <?php echo esc_html( $theme->get( 'Name' ) ); ?> 
+                                    <code>(<?php echo esc_html( $theme_key ); ?>)</code>
+                                </label>
+                            </fieldset>
+                            <?php
+                        endforeach;
+                    else :
+                        echo '<p>No themes found.</p>';
+                    endif;
+                    ?>
+                    <p class="description">Select themes to exclude from the deployment.</p>
                 </td>
             </tr>
         </table>
@@ -127,18 +145,41 @@ $options = [
         <h2>Plugin Export Settings</h2>
         <table class="form-table">
             <tr>
-                <th scope="row">
-                    <label for="r2PluginsToExclude">Plugins to Exclude</label>
-                </th>
+                <th scope="row">Plugins to Exclude</th>
                 <td>
-                    <textarea 
-                        id="r2PluginsToExclude" 
-                        name="r2PluginsToExclude" 
-                        rows="5" 
-                        class="large-text"
-                        placeholder="akismet&#10;hello-dolly"
-                    ><?php echo esc_textarea( $options['r2PluginsToExclude'] ); ?></textarea>
-                    <p class="description">List plugin directory names to exclude (one per line, simple names only). Leave empty to include all plugins.</p>
+                    <?php
+                    $all_plugins = get_plugins();
+                    $excluded_plugins = array_filter( array_map( 'trim', explode( "\n", $options['r2PluginsToExclude'] ) ) );
+                    
+                    if ( ! empty( $all_plugins ) ) :
+                        foreach ( $all_plugins as $plugin_path => $plugin ) :
+                            $plugin_dir = dirname( $plugin_path );
+                            if ( $plugin_dir === '.' ) {
+                                $plugin_dir = $plugin_path;
+                            }
+                            $is_checked = in_array( $plugin_dir, $excluded_plugins );
+                            $field_id = 'r2PluginsToExclude_' . md5( $plugin_dir );
+                            ?>
+                            <fieldset>
+                                <label for="<?php echo esc_attr( $field_id ); ?>">
+                                    <input 
+                                        type="checkbox" 
+                                        id="<?php echo esc_attr( $field_id ); ?>" 
+                                        name="r2PluginsToExclude[]" 
+                                        value="<?php echo esc_attr( $plugin_dir ); ?>"
+                                        <?php checked( $is_checked ); ?>
+                                    />
+                                    <?php echo esc_html( $plugin['Name'] ); ?> 
+                                    <code>(<?php echo esc_html( $plugin_dir ); ?>)</code>
+                                </label>
+                            </fieldset>
+                            <?php
+                        endforeach;
+                    else :
+                        echo '<p>No plugins found.</p>';
+                    endif;
+                    ?>
+                    <p class="description">Select plugins to exclude from the deployment.</p>
                 </td>
             </tr>
         </table>

@@ -1,20 +1,3 @@
-a[href*="wp2static-try-1-click-publish"], .try-1-click-publish-menu-item {
-  color: white !important;
-  background-color: #FB4247;
-  font-weight: bold; 
-}
-
-.try-1-click-publish-menu-item:hover {
-  color: #FB4247 !important;
-  background-color: white !important;
-  font-weight: bold; 
-}
-
-#wp2static-try-1-click-publish-plugin-screen {
-  color: #FB4247;
-  font-weight: bold;
-}
-
 .wp2static-admin-notice {
   margin-left: 2px;
   margin-right: 36px;
@@ -37,9 +20,4 @@ a[id*="wp2static-admin-notice-dismiss"] {
 
 #wp2static-admin-notice-nonce, #wp2static-admin-notice-user-id {
   display: none;
-}
-
-.strattic-logo {
-  margin-bottom: -5px;
-  padding-right: 5px;
 }

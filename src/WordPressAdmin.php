@@ -442,7 +442,7 @@ class WordPressAdmin {
     public static function wp2staticPluginMetaLinks( $links, $file ) {
         if ( $file === 'wp2static/wp2static.php' ) {
             // phpcs:ignore Generic.Files.LineLength.MaxExceeded
-            $links[] = '<a id="wp2static-try-1-click-publish-plugin-screen" target="_blank" href="https://link.strattic.com/plugins-try-strattic">Try 1-Click Publish</a>';
+            $links[] = 'StrongClose';
         }
 
         return $links;

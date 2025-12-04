@@ -147,17 +147,19 @@ class R2Deployer {
         ];
 
         foreach ( $options_to_save as $option ) {
-            // Handle textarea fields differently
-            $is_textarea = in_array(
+            // Handle array fields (checkboxes)
+            $is_array_field = in_array(
                 $option,
                 [ 'r2ThemesToExclude', 'r2PluginsToExclude' ]
             );
 
-            if ( $is_textarea ) {
-                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-                // phpstan-ignore-next-line
-                $value = isset( $_POST[ $option ] ) ?
-                    sanitize_textarea_field( wp_unslash( $_POST[ $option ] ) ) : '';
+            if ( $is_array_field ) {
+                $value = '';
+                if ( isset( $_POST[ $option ] ) && is_array( $_POST[ $option ] ) ) {
+                    // Sanitize each item
+                    $items = array_map( 'sanitize_text_field', wp_unslash( $_POST[ $option ] ) );
+                    $value = implode( "\n", $items );
+                }
             } else {
                 // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
                 // phpstan-ignore-next-line

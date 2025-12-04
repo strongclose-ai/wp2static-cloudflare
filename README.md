@@ -8,6 +8,15 @@ Strattic is generously keeping the WP2Static plugin available and maintained for
 
 [Read Announcement](https://www.strattic.com/wp2static-joins-strattic/)
 
+## Features
+
+- Generate static HTML from your WordPress site
+- Deploy to various platforms via add-ons
+- **NEW: R2 API Deployment** - Deploy to Cloudflare R2 via custom API with complete site export (themes, plugins, database)
+- URL detection and crawling
+- Post-processing and optimization
+- Caching for efficient rebuilds
+
 ## Installation options
 
  - from this source code `git clone https://github.com/wp2static/wp2static.git` (run `composer install` afterwards)
@@ -19,6 +28,17 @@ Strattic is generously keeping the WP2Static plugin available and maintained for
 ## [Docs](https://wp2static.com)
 
 ## [Support Forum](https://staticword.press/c/wordpress-static-site-generators/wp2static/)
+
+## R2 API Deployment
+
+Deploy your static WordPress site to Cloudflare R2 via a custom API. This feature includes:
+
+- JWT authentication for secure API access
+- Complete site export (static files, themes, plugins, database)
+- Configurable theme and plugin inclusion/exclusion
+- Automatic GZIP archive creation
+
+[Read the R2 API Deployment Guide](./R2_API_DEPLOYMENT.md)
 
 ### Contributing
 

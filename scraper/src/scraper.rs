@@ -62,11 +62,8 @@ pub fn scrape_page(url: &str, base_url: &str, output_dir: &Path) -> Result<PathB
 }
 
 /// Generate output file path from URL
-fn generate_output_path(url: &str, base_url: &str, output_dir: &Path) -> Result<PathBuf> {
+fn generate_output_path(url: &str, _base_url: &str, output_dir: &Path) -> Result<PathBuf> {
     let parsed_url = Url::parse(url).context(format!("Failed to parse URL: {}", url))?;
-
-    let _base_parsed =
-        Url::parse(base_url).context(format!("Failed to parse base URL: {}", base_url))?;
 
     // Get the path component
     let path = parsed_url.path();

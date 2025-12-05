@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a high-performance Rust-based web scraper with PHP integration that replaces the PHP scraping logic in WP2Static. The scraper is production-ready with parallel processing and seamless WordPress integration via `php_exec`.
+Successfully implemented a high-performance Rust-based web scraper with PHP integration that replaces the PHP scraping logic in WP2Static. The scraper is production-ready with parallel processing and seamless WordPress integration via PHP's `exec()` function.
 
 ## Requirements Met
 
@@ -160,11 +160,10 @@ This should:
 ## Future Enhancements
 
 Documented in `scraper/README.md`:
-- Parallel processing for faster scraping
-- Progress bars and better status reporting
+- CDN migration implementation with API integration
+- Visual progress bars using `indicatif`
 - Retry logic for failed fetches
 - Configuration file support
-- CDN migration implementation
 
 ## Files Modified
 

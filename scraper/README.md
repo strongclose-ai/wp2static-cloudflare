@@ -9,7 +9,7 @@ A high-performance Rust-based web scraper that replaces the PHP scraping logic i
 - **Markdown Conversion**: Converts extracted HTML content to clean Markdown format
 - **Asset Detection**: Detects self-hosted JavaScript and CSS files (with stub for future CDN migration)
 - **Parallel Processing**: Concurrent scraping with configurable worker threads for maximum performance
-- **PHP Integration**: Seamlessly integrates with WordPress via `php_exec` for easy deployment
+- **PHP Integration**: Seamlessly integrates with WordPress via PHP's `exec()` function for easy deployment
 
 ## Building
 
@@ -189,8 +189,7 @@ Contributions are welcome! When contributing to the Rust scraper:
 The following features are planned for future development:
 
 - **CDN Migration**: Implement the `migrate_to_cdn` function once API details are provided
-- **Parallel Processing**: Add concurrent page scraping for improved performance
-- **Progress Reporting**: Add progress bars and better status reporting
+- **Progress Bars**: Add visual progress bars using `indicatif` or similar
 - **Error Recovery**: Implement retry logic for failed page fetches
 - **Configuration File**: Support for configuration files to store common options
 

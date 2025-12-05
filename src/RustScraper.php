@@ -44,6 +44,7 @@ class RustScraper {
         // Build the command to execute the Rust scraper
         $binary = self::getBinaryPath();
         
+        // Validate binary path exists and is executable
         if ( ! file_exists( $binary ) ) {
             WsLog::l( 'Rust scraper binary not found. Building from source...' );
             self::buildBinary();
@@ -54,13 +55,20 @@ class RustScraper {
             throw new WP2StaticException( 'Rust scraper binary not found at: ' . $binary );
         }
 
-        // Construct the command
+        if ( ! is_executable( $binary ) ) {
+            throw new WP2StaticException( 'Rust scraper binary is not executable: ' . $binary );
+        }
+
+        // Detect sitemap URL dynamically
+        $sitemap_path = self::detectSitemapPath( $base_url );
+
+        // Construct the command with proper escaping
         $cmd = sprintf(
             '%s --base-url %s --output-dir %s --sitemap %s 2>&1',
-            escapeshellarg( $binary ),
+            escapeshellcmd( escapeshellarg( $binary ) ),
             escapeshellarg( $base_url ),
             escapeshellarg( $output_dir ),
-            escapeshellarg( 'sitemap_index.xml' )
+            escapeshellarg( $sitemap_path )
         );
 
         WsLog::l( 'Executing Rust scraper: ' . $cmd );
@@ -89,6 +97,35 @@ class RustScraper {
     }
 
     /**
+     * Detect the sitemap path for the WordPress site
+     *
+     * @param string $base_url Base URL of the site
+     * @return string Sitemap path
+     */
+    private static function detectSitemapPath( string $base_url ) : string {
+        // Try common sitemap locations
+        $sitemap_candidates = [
+            'sitemap_index.xml',  // Yoast SEO
+            'wp-sitemap.xml',     // WordPress core (5.5+)
+            'sitemap.xml',        // Generic
+        ];
+
+        foreach ( $sitemap_candidates as $candidate ) {
+            $sitemap_url = rtrim( $base_url, '/' ) . '/' . $candidate;
+            $response = wp_remote_head( $sitemap_url );
+            
+            if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+                WsLog::l( 'Found sitemap at: ' . $candidate );
+                return $candidate;
+            }
+        }
+
+        // Default to sitemap_index.xml if none found
+        WsLog::l( 'No sitemap found, defaulting to sitemap_index.xml' );
+        return 'sitemap_index.xml';
+    }
+
+    /**
      * Get the path to the Rust scraper binary
      *
      * @return string Path to the binary
@@ -104,6 +141,11 @@ class RustScraper {
         // Path to the release binary
         self::$binary_path = $plugin_dir . '/scraper/target/release/wp2static_scraper';
 
+        // Append .exe on Windows systems
+        if ( PHP_OS_FAMILY === 'Windows' ) {
+            self::$binary_path .= '.exe';
+        }
+
         return self::$binary_path;
     }
 
@@ -113,6 +155,16 @@ class RustScraper {
      * @return void
      */
     private static function buildBinary() : void {
+        // Check if Cargo is installed
+        $cargo_check = [];
+        $cargo_return = 0;
+        exec( 'cargo --version 2>&1', $cargo_check, $cargo_return );
+        
+        if ( $cargo_return !== 0 ) {
+            WsLog::l( 'Cargo is not installed or not in PATH. Please install Rust from https://rustup.rs/' );
+            return;
+        }
+
         $plugin_dir = dirname( __DIR__ );
         $scraper_dir = $plugin_dir . '/scraper';
 
@@ -159,6 +211,12 @@ class RustScraper {
         // Future enhancement: convert markdown back to HTML if needed
         WsLog::l( 'Post-processing markdown files from: ' . $markdown_dir );
         
+        // Check if directory exists and is readable
+        if ( ! is_dir( $markdown_dir ) || ! is_readable( $markdown_dir ) ) {
+            WsLog::l( 'Markdown directory not found or not readable: ' . $markdown_dir );
+            return;
+        }
+
         // Count files
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator( $markdown_dir, \RecursiveDirectoryIterator::SKIP_DOTS )

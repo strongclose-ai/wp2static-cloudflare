@@ -34,7 +34,8 @@ impl AssetDetector {
         let mut assets = HashSet::new();
 
         // Detect CSS files
-        let css_selector = Selector::parse("link[rel='stylesheet']").unwrap();
+        let css_selector = Selector::parse("link[rel='stylesheet']")
+            .expect("Failed to parse CSS selector - this should never happen");
         for element in document.select(&css_selector) {
             if let Some(href) = element.value().attr("href") {
                 if let Some(absolute_url) = Self::resolve_url(href, base_url) {
@@ -49,7 +50,8 @@ impl AssetDetector {
         }
 
         // Detect JavaScript files
-        let js_selector = Selector::parse("script[src]").unwrap();
+        let js_selector = Selector::parse("script[src]")
+            .expect("Failed to parse JS selector - this should never happen");
         for element in document.select(&js_selector) {
             if let Some(src) = element.value().attr("src") {
                 if let Some(absolute_url) = Self::resolve_url(src, base_url) {
@@ -84,8 +86,13 @@ impl AssetDetector {
         };
 
         // Handle absolute URLs
-        if href.starts_with("http://") || href.starts_with("https://") || href.starts_with("//") {
+        if href.starts_with("http://") || href.starts_with("https://") {
             return Some(href.to_string());
+        }
+
+        // Handle protocol-relative URLs
+        if href.starts_with("//") {
+            return Some(format!("{}:{}", base.scheme(), href));
         }
 
         // Resolve relative URL

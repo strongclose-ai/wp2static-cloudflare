@@ -6,7 +6,7 @@ use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 #[derive(Parser, Debug)]
 #[command(name = "wp2static_scraper")]
@@ -45,7 +45,11 @@ fn main() -> Result<()> {
     println!("\n=== Parsing sitemap...");
     let start_time = std::time::Instant::now();
     let urls = sitemap::parse_sitemap(&args.base_url, &args.sitemap)?;
-    println!("Found {} URLs in sitemap ({:.2}s)", urls.len(), start_time.elapsed().as_secs_f64());
+    println!(
+        "Found {} URLs in sitemap ({:.2}s)",
+        urls.len(),
+        start_time.elapsed().as_secs_f64()
+    );
 
     if urls.is_empty() {
         println!("No URLs found to process.");
@@ -55,27 +59,35 @@ fn main() -> Result<()> {
     // Scrape pages in parallel
     println!("\n=== Scraping pages with {} workers...", args.concurrency);
     let scrape_start = std::time::Instant::now();
-    
+
     let success_count = Arc::new(AtomicUsize::new(0));
     let error_count = Arc::new(AtomicUsize::new(0));
-    
+    let output_lock = Arc::new(Mutex::new(()));
+
     // Use rayon for parallel processing
     use rayon::prelude::*;
     rayon::ThreadPoolBuilder::new()
         .num_threads(args.concurrency)
         .build()
-        .unwrap()
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to create Rayon thread pool: {}", e);
+            std::process::exit(1);
+        })
         .install(|| {
             urls.par_iter().enumerate().for_each(|(index, url)| {
                 let progress = format!("[{}/{}]", index + 1, urls.len());
-                
+
                 match scraper::scrape_page(url, &args.base_url, &args.output_dir) {
                     Ok(markdown_path) => {
                         success_count.fetch_add(1, Ordering::Relaxed);
+                        // Lock stdout to prevent interleaved output
+                        let _lock = output_lock.lock().unwrap();
                         println!("{} ✓ {}", progress, markdown_path.display());
                     }
                     Err(e) => {
                         error_count.fetch_add(1, Ordering::Relaxed);
+                        // Lock stderr to prevent interleaved output
+                        let _lock = output_lock.lock().unwrap();
                         eprintln!("{} ✗ {}: {}", progress, url, e);
                     }
                 }
@@ -93,7 +105,10 @@ fn main() -> Result<()> {
     println!("Errors: {}", errors);
     println!("Scraping time: {:.2}s", elapsed);
     println!("Total time: {:.2}s", total_time);
-    println!("Average: {:.2} pages/sec", urls.len() as f64 / elapsed);
+    println!(
+        "Average: {:.2} pages/sec",
+        urls.len() as f64 / elapsed.max(0.001)
+    );
     println!("Markdown files saved to: {}", args.output_dir.display());
 
     Ok(())

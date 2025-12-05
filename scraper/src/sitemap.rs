@@ -20,16 +20,21 @@ pub fn parse_sitemap(base_url: &str, sitemap_path: &str) -> Result<Vec<String>> 
     if !sitemap_urls.is_empty() {
         // This is a sitemap index, parse each referenced sitemap
         println!("Found {} sitemap(s) in index", sitemap_urls.len());
+        let mut any_success = false;
         for sitemap_url in sitemap_urls {
             match fetch_and_parse_sitemap(&sitemap_url) {
                 Ok(mut page_urls) => {
                     println!("  - {} URLs from {}", page_urls.len(), sitemap_url);
                     urls.extend(page_urls.drain(..));
+                    any_success = true;
                 }
                 Err(e) => {
                     eprintln!("  - Error parsing {}: {}", sitemap_url, e);
                 }
             }
+        }
+        if !any_success {
+            eprintln!("Warning: All sitemap fetches failed, no URLs were collected.");
         }
     } else {
         // This is a regular sitemap, parse URLs directly

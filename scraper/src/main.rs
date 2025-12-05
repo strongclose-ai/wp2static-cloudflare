@@ -1,7 +1,4 @@
-// CDN migration module - conditionally compiled with 'cdn-migration' feature flag
-#[cfg(feature = "cdn-migration")]
 mod asset_detector;
-
 mod scraper;
 mod sitemap;
 
@@ -13,13 +10,13 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Parser, Debug)]
 #[command(name = "wp2static_scraper")]
-#[command(about = "A Rust scraper for WP2Static that saves static HTML pages", long_about = None)]
+#[command(about = "A Rust scraper for WP2Static that generates both static HTML and markdown", long_about = None)]
 struct Args {
     /// Base URL of the WordPress site
     #[arg(short, long)]
     base_url: String,
 
-    /// Output directory for static HTML files
+    /// Output directory for static files (HTML in root, markdown in markdown/ subdirectory)
     #[arg(short, long, default_value = "output")]
     output_dir: PathBuf,
 
@@ -112,7 +109,8 @@ fn main() -> Result<()> {
         "Average: {:.2} pages/sec",
         urls.len() as f64 / elapsed.max(0.001)
     );
-    println!("HTML files saved to: {}", args.output_dir.display());
+    println!("Static HTML files saved to: {}", args.output_dir.display());
+    println!("Markdown files saved to: {}/markdown/", args.output_dir.display());
 
     Ok(())
 }

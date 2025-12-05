@@ -1,6 +1,3 @@
-// This module is currently disabled and available only via the cdn-migration feature.
-// To enable, build with: cargo build --features cdn-migration
-
 use anyhow::Result;
 use scraper::{Html, Selector};
 use std::collections::HashSet;

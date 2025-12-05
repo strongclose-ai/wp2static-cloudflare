@@ -6,7 +6,7 @@ namespace WP2Static;
  * RustScraper - High-performance scraper using Rust binary
  *
  * This class provides an interface to execute the Rust-based scraper
- * which generates static HTML files from WordPress pages.
+ * which generates both static HTML files and markdown content from WordPress pages.
  */
 class RustScraper {
 
@@ -30,7 +30,7 @@ class RustScraper {
             return;
         }
 
-        WsLog::l( 'Starting Rust scraper for static HTML generation' );
+        WsLog::l( 'Starting Rust scraper for static HTML and markdown generation' );
 
         // Get the base URL of the site
         $base_url = SiteInfo::getURL( 'site' );
@@ -91,6 +91,7 @@ class RustScraper {
 
         WsLog::l( 'Rust scraper completed successfully' );
         WsLog::l( 'Static HTML files saved to: ' . $output_dir );
+        WsLog::l( 'Markdown files saved to: ' . $output_dir . '/markdown/' );
     }
 
     /**

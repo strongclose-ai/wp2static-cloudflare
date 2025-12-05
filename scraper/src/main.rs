@@ -1,6 +1,6 @@
-// CDN migration feature - currently disabled
-// #[cfg(feature = "cdn-migration")]
-// mod asset_detector;
+// CDN migration module - available via feature flag
+#[cfg(feature = "cdn-migration")]
+mod asset_detector;
 
 mod scraper;
 mod sitemap;

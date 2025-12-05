@@ -1,7 +1,5 @@
-// This module is currently disabled. It will be used for future CDN migration feature.
+// This module is currently disabled and available only via the cdn-migration feature.
 // To enable, build with: cargo build --features cdn-migration
-
-#![allow(dead_code)]
 
 use anyhow::Result;
 use scraper::{Html, Selector};

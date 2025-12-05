@@ -39,6 +39,9 @@ WP2Static\Controller::init( __FILE__ );
 // Initialize R2 API addon
 WP2Static\R2AddonInit::init();
 
+// Register Rust scraper
+WP2Static\RustScraper::registerCrawler();
+
 /**
  * Define Settings link for plugin
  *

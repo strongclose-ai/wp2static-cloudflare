@@ -100,6 +100,30 @@ Run the test suite:
 cargo test
 ```
 
+## Example Output
+
+When scraping a WordPress page, the scraper produces markdown with metadata:
+
+```markdown
+<!-- Source URL: https://example.com/blog/my-post/ -->
+<!-- Detected Assets:
+  - https://example.com/wp-content/themes/mytheme/style.css (Type: CSS)
+  - https://example.com/wp-includes/js/jquery.js (Type: JavaScript)
+-->
+
+# My Blog Post
+
+This is the main content of the blog post, extracted intelligently
+using text density analysis.
+
+The scraper automatically identifies the main content area and ignores
+navigation, sidebars, footers, and other peripheral elements.
+
+## A Subheading
+
+More content here...
+```
+
 ## Dependencies
 
 - `reqwest`: HTTP client for fetching pages
@@ -113,3 +137,23 @@ cargo test
 ## License
 
 This project is part of WP2Static and follows the same license (UNLICENSE).
+
+## Contributing
+
+Contributions are welcome! When contributing to the Rust scraper:
+
+1. Run tests before submitting: `cargo test`
+2. Run clippy for lint checks: `cargo clippy`
+3. Format code with: `cargo fmt`
+4. Update documentation as needed
+
+### Future Enhancements
+
+The following features are planned for future development:
+
+- **CDN Migration**: Implement the `migrate_to_cdn` function once API details are provided
+- **Parallel Processing**: Add concurrent page scraping for improved performance
+- **Progress Reporting**: Add progress bars and better status reporting
+- **Error Recovery**: Implement retry logic for failed page fetches
+- **Configuration File**: Support for configuration files to store common options
+

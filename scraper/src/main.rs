@@ -1,4 +1,4 @@
-// CDN migration module - available via feature flag
+// CDN migration module - conditionally compiled with 'cdn-migration' feature flag
 #[cfg(feature = "cdn-migration")]
 mod asset_detector;
 

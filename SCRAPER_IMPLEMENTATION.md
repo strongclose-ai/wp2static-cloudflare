@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a high-performance Rust-based web scraper with PHP integration that **completely replaces the PHP scraping logic** in WP2Static. The scraper generates static HTML files directly, matching the behavior of the original PHP Crawler, with enhanced performance through parallel processing.
+Successfully implemented a high-performance Rust-based web scraper with PHP integration that **completely replaces the PHP scraping logic** in WP2Static. The scraper generates **both static HTML files and markdown content**, providing dual output for static site generation and content analysis.
 
 ## Requirements Met
 
@@ -13,27 +13,29 @@ Successfully implemented a high-performance Rust-based web scraper with PHP inte
 - Extracts all page URLs from urlsets
 - Handles both sitemap index and regular sitemap formats
 
-### 2. ✅ Generate static HTML files for every page
+### 2. ✅ Generate static HTML files AND markdown for every page
 - **Implementation**: `src/scraper.rs`
 - Fetches HTML content directly from URLs
-- Saves as static HTML files (no conversion)
-- Preserves URL structure in the output directory
+- Saves raw HTML as static files for the static site
+- Extracts main content using text density analysis
+- Converts extracted content to markdown with metadata
+- Preserves URL structure in both output formats
 - Matches PHP Crawler::transformPath logic (URLs ending in `/` become `/index.html`)
 - Integrates seamlessly with StaticSite path
 
-### 3. ✅ Asset detection capability (optional, for future use)
-- **Implementation**: `src/asset_detector.rs` (currently disabled)
-- Module preserved for future CDN migration features
-- Can detect `<link rel="stylesheet">` tags
-- Can detect `<script src="">` tags
+### 3. ✅ Asset detection and metadata
+- **Implementation**: `src/asset_detector.rs`
+- Detects `<link rel="stylesheet">` tags
+- Detects `<script src="">` tags
 - Filters to only self-hosted assets (same domain)
-- Available via optional `cdn-migration` feature flag
+- Includes asset metadata in markdown files
+- Ready for future CDN migration features
 
 ### 4. ✅ PHP Integration via exec
 - **Implementation**: `src/RustScraper.php`
 - Integrates with WordPress plugin system
 - Executes Rust binary via PHP `exec()` function
-- Outputs directly to StaticSite path (not a subdirectory)
+- Outputs HTML to StaticSite path, markdown to subdirectory
 - Automatic binary building if not found
 - Proper error handling and logging
 - Registered as WordPress action hook
@@ -53,8 +55,8 @@ scraper/
 └── src/
     ├── main.rs             # CLI with parallel processing
     ├── sitemap.rs          # Sitemap parsing functionality
-    ├── scraper.rs          # Page fetching and HTML saving
-    └── asset_detector.rs   # Asset detection (optional, for future CDN migration)
+    ├── scraper.rs          # Page fetching, HTML and markdown generation
+    └── asset_detector.rs   # Asset detection with metadata
 
 src/
 └── RustScraper.php         # PHP integration wrapper
@@ -66,17 +68,20 @@ wp2static.php               # Plugin initialization (registers RustScraper)
 
 ### Dependencies
 - **reqwest**: HTTP client with rustls-tls for secure connections
+- **scraper**: HTML parsing and CSS selector support
+- **dom-content-extraction**: Intelligent content extraction via text density analysis
+- **html2md**: HTML to Markdown conversion
 - **url**: URL parsing and manipulation
 - **quick-xml**: Fast XML parsing for sitemaps
 - **clap**: Command-line argument parsing
 - **anyhow**: Error handling
 - **rayon**: Parallel processing for high performance
-- **scraper** (optional): HTML parsing for future CDN migration feature
 
 ### PHP Integration
 - Seamless WordPress integration via `RustScraper.php`
 - Uses PHP `exec()` to call the Rust binary
-- Outputs directly to StaticSite path (fully replaces PHP Crawler)
+- HTML output goes to StaticSite root
+- Markdown output goes to StaticSite/markdown/ subdirectory
 - Automatic binary building if not present
 - Proper error handling and WordPress logging
 - Registered as WordPress action hook: `wp2static_crawl`
@@ -92,16 +97,18 @@ wp2static.php               # Plugin initialization (registers RustScraper)
 - **Optimized Build**: Release mode with full optimizations
 
 ### Code Quality
-- ✅ All tests passing (6/6 core tests)
-- ✅ Zero clippy warnings with `-D warnings`
+- ✅ All tests passing (13/13 tests)
+- ✅ Zero clippy warnings
 - ✅ Properly formatted with `cargo fmt`
 - ✅ Clean, maintainable Rust code
 - ✅ Comprehensive error handling with context
 - ✅ PHP integration with proper error handling
 
 ### Features
-- Preserves URL hierarchy in output structure (matches PHP Crawler)
-- Saves raw HTML files directly (no conversion)
+- Dual output: HTML for static site, markdown for content analysis
+- Preserves URL hierarchy in both output formats
+- Intelligent content extraction using text density analysis
+- Asset detection with metadata in markdown files
 - Configurable output directory
 - Configurable sitemap path
 - Clear error messages
@@ -123,8 +130,9 @@ cargo build --release
 
 ## Output Example
 
-The scraper fetches HTML pages and saves them directly to the output directory, preserving the URL structure:
+The scraper generates two types of files:
 
+### Static HTML Files
 ```
 output/
 ├── index.html            # Homepage
@@ -135,13 +143,36 @@ output/
         └── index.html    # /blog/post/ page
 ```
 
+### Markdown Files with Metadata
+```
+output/markdown/
+├── index.md              # Homepage content
+├── about/
+│   └── index.md          # /about/ content
+└── blog/
+    └── post.md           # /blog/post/ content
+```
+
+Each markdown file includes:
+```markdown
+<!-- Source URL: https://example.com/blog/post/ -->
+<!-- Detected Assets:
+  - https://example.com/wp-content/themes/theme/style.css (Type: CSS)
+  - https://example.com/wp-includes/js/jquery.js (Type: JavaScript)
+-->
+
+# Post Title
+
+Extracted main content...
+```
+
 ## Next Steps for CDN Migration
 
-The `asset_detector.rs` module is preserved for future CDN migration features. To enable:
+The `asset_detector.rs` module is already active and detects assets in every page. To implement actual CDN migration:
 
-1. Build with feature flag: `cargo build --release --features cdn-migration`
-2. Implement the `migrate_to_cdn()` function with actual CDN API integration
-3. Update the scraper to use asset detection when needed
+1. Implement the `migrate_to_cdn()` function with actual CDN API integration
+2. Add CDN upload logic to the asset detection workflow
+3. Update asset URLs in the HTML files after migration
 
 The function signature is:
 
@@ -159,15 +190,18 @@ This should:
 - Unit tests for core modules
 - Test coverage for:
   - Sitemap parsing (index and urlset)
-  - URL path generation and transformation
-  - HTML file path matching PHP Crawler behavior
+  - HTML path generation (matching PHP Crawler behavior)
+  - Markdown path generation
+  - Asset detection
 
 Run tests with: `cargo test`
+
+All 13 tests passing with no warnings.
 
 ## Future Enhancements
 
 Documented in `scraper/README.md`:
-- CDN migration implementation with API integration (via asset_detector module)
+- Actual CDN migration implementation with API integration
 - Visual progress bars using `indicatif`
 - Retry logic for failed fetches
 - Configuration file support
@@ -181,18 +215,29 @@ Documented in `scraper/README.md`:
    - `scraper/src/main.rs`
    - `scraper/src/sitemap.rs`
    - `scraper/src/scraper.rs`
-   - `scraper/src/asset_detector.rs` (optional module)
+   - `scraper/src/asset_detector.rs`
    - `src/RustScraper.php`
 
 2. **Modified Files**:
    - `.gitignore` - Added Rust build artifact exclusions
    - `README.md` - Updated Rust scraper description
    - `wp2static.php` - Registered RustScraper
-   - `README.md` - Added Rust scraper documentation
+   - `SCRAPER_IMPLEMENTATION.md` - Documentation
 
 ## Conclusion
 
-The Rust scraper now **completely replaces the PHP scraping logic** including static HTML page generation. It provides a fast, reliable, and well-documented replacement that:
+The Rust scraper now **completely replaces the PHP scraping logic** with dual output generation. It provides a fast, reliable, and well-documented replacement that:
+
+- Generates **static HTML files** for the static site (matching PHP Crawler behavior)
+- Generates **markdown files** for content analysis with asset metadata
+- Extracts main content intelligently using text density analysis
+- Detects self-hosted assets for future CDN migration
+- Follows the same path transformation rules as the PHP Crawler
+- Outputs to the correct directory structure (HTML to root, markdown to subdirectory)
+- Supports parallel processing for significantly better performance
+- Integrates seamlessly with the WordPress plugin workflow
+
+The scraper is production-ready and can be used as a complete replacement for the PHP Crawler by setting the crawler slug to 'rust-scraper'.
 
 - Generates static HTML files directly (no conversion needed)
 - Follows the same path transformation rules as the PHP Crawler

@@ -13,6 +13,7 @@ Strattic is generously keeping the WP2Static plugin available and maintained for
 - Generate static HTML from your WordPress site
 - Deploy to various platforms via add-ons
 - **NEW: R2 API Deployment** - Deploy to Cloudflare R2 via custom API with complete site export (themes, plugins, database)
+- **NEW: Rust Scraper** - High-performance Rust-based scraper that converts pages to Markdown
 - URL detection and crawling
 - Post-processing and optimization
 - Caching for efficient rebuilds
@@ -39,6 +40,30 @@ Deploy your static WordPress site to Cloudflare R2 via a custom API. This featur
 - Automatic GZIP archive creation
 
 [Read the R2 API Deployment Guide](./R2_API_DEPLOYMENT.md)
+
+## Rust Scraper
+
+A high-performance Rust-based scraper that replaces the PHP scraping logic. The scraper:
+
+- Parses sitemap files (`sitemap_index.xml`) to discover all pages
+- Extracts main content using text density analysis
+- Converts pages to Markdown format
+- Detects self-hosted JavaScript and CSS assets
+
+[Read the Rust Scraper Documentation](./scraper/README.md)
+
+### Quick Start
+
+```bash
+# Build the scraper
+cd scraper
+cargo build --release
+
+# Run the scraper
+./target/release/wp2static_scraper \
+  --base-url "https://your-site.com" \
+  --output-dir "markdown_output"
+```
 
 ### Contributing
 

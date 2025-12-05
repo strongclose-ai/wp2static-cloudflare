@@ -16,3 +16,7 @@ admin/*.js*
 *.pid
 result
 result-*
+
+# Rust build artifacts
+/scraper/target/
+/scraper/Cargo.lock

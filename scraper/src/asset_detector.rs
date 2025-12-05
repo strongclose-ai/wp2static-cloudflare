@@ -12,14 +12,14 @@ pub struct Asset {
 #[derive(Debug, Clone)]
 pub enum AssetType {
     JavaScript,
-    CSS,
+    Css,
 }
 
 impl std::fmt::Display for AssetType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AssetType::JavaScript => write!(f, "JavaScript"),
-            AssetType::CSS => write!(f, "CSS"),
+            AssetType::Css => write!(f, "CSS"),
         }
     }
 }
@@ -32,7 +32,7 @@ impl AssetDetector {
     pub fn detect_assets(html: &str, base_url: &str) -> Result<Vec<Asset>> {
         let document = Html::parse_document(html);
         let mut assets = HashSet::new();
-        
+
         // Detect CSS files
         let css_selector = Selector::parse("link[rel='stylesheet']").unwrap();
         for element in document.select(&css_selector) {
@@ -41,13 +41,13 @@ impl AssetDetector {
                     if Self::is_self_hosted(&absolute_url, base_url) {
                         assets.insert(Asset {
                             url: absolute_url,
-                            asset_type: AssetType::CSS,
+                            asset_type: AssetType::Css,
                         });
                     }
                 }
             }
         }
-        
+
         // Detect JavaScript files
         let js_selector = Selector::parse("script[src]").unwrap();
         for element in document.select(&js_selector) {
@@ -62,55 +62,55 @@ impl AssetDetector {
                 }
             }
         }
-        
+
         // Convert to sorted vector for consistent output
         let mut result: Vec<Asset> = assets.into_iter().collect();
         result.sort_by(|a, b| a.url.cmp(&b.url));
-        
+
         Ok(result)
     }
-    
+
     /// Resolve a relative URL to an absolute URL
     fn resolve_url(href: &str, base_url: &str) -> Option<String> {
         // Handle data URLs, javascript:, etc.
         if href.starts_with("data:") || href.starts_with("javascript:") || href.starts_with("#") {
             return None;
         }
-        
+
         // Parse base URL
         let base = match Url::parse(base_url) {
             Ok(url) => url,
             Err(_) => return None,
         };
-        
+
         // Handle absolute URLs
         if href.starts_with("http://") || href.starts_with("https://") || href.starts_with("//") {
             return Some(href.to_string());
         }
-        
+
         // Resolve relative URL
         match base.join(href) {
             Ok(url) => Some(url.to_string()),
             Err(_) => None,
         }
     }
-    
+
     /// Check if a URL is self-hosted (same domain as base URL)
     fn is_self_hosted(url: &str, base_url: &str) -> bool {
         let parsed_url = match Url::parse(url) {
             Ok(u) => u,
             Err(_) => return false,
         };
-        
+
         let base = match Url::parse(base_url) {
             Ok(u) => u,
             Err(_) => return false,
         };
-        
+
         // Check if domains match
         parsed_url.host_str() == base.host_str()
     }
-    
+
     /// Stub method for CDN migration
     /// TODO: Implement actual CDN migration logic when API details are provided
     #[allow(dead_code)]
@@ -149,15 +149,16 @@ mod tests {
             </head>
         </html>
         "#;
-        
+
         let base_url = "https://example.com";
         let assets = AssetDetector::detect_assets(html, base_url).unwrap();
-        
+
         // Should only detect self-hosted CSS
-        let css_assets: Vec<_> = assets.iter()
-            .filter(|a| matches!(a.asset_type, AssetType::CSS))
+        let css_assets: Vec<_> = assets
+            .iter()
+            .filter(|a| matches!(a.asset_type, AssetType::Css))
             .collect();
-        
+
         assert_eq!(css_assets.len(), 1);
         assert!(css_assets[0].url.contains("example.com"));
     }
@@ -172,15 +173,16 @@ mod tests {
             </body>
         </html>
         "#;
-        
+
         let base_url = "https://example.com";
         let assets = AssetDetector::detect_assets(html, base_url).unwrap();
-        
+
         // Should only detect self-hosted JS
-        let js_assets: Vec<_> = assets.iter()
+        let js_assets: Vec<_> = assets
+            .iter()
             .filter(|a| matches!(a.asset_type, AssetType::JavaScript))
             .collect();
-        
+
         assert_eq!(js_assets.len(), 1);
         assert!(js_assets[0].url.contains("example.com"));
     }
@@ -188,33 +190,39 @@ mod tests {
     #[test]
     fn test_is_self_hosted() {
         let base_url = "https://example.com";
-        
-        assert!(AssetDetector::is_self_hosted("https://example.com/style.css", base_url));
-        assert!(!AssetDetector::is_self_hosted("https://external.com/style.css", base_url));
+
+        assert!(AssetDetector::is_self_hosted(
+            "https://example.com/style.css",
+            base_url
+        ));
+        assert!(!AssetDetector::is_self_hosted(
+            "https://external.com/style.css",
+            base_url
+        ));
     }
 
     #[test]
     fn test_resolve_url() {
         let base_url = "https://example.com/blog/";
-        
+
         // Absolute URL
         assert_eq!(
             AssetDetector::resolve_url("https://other.com/style.css", base_url).unwrap(),
             "https://other.com/style.css"
         );
-        
+
         // Root-relative URL
         assert_eq!(
             AssetDetector::resolve_url("/style.css", base_url).unwrap(),
             "https://example.com/style.css"
         );
-        
+
         // Relative URL
         assert_eq!(
             AssetDetector::resolve_url("style.css", base_url).unwrap(),
             "https://example.com/blog/style.css"
         );
-        
+
         // Data URL should return None
         assert!(AssetDetector::resolve_url("data:image/png;base64,xyz", base_url).is_none());
     }

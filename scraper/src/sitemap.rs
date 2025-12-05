@@ -6,18 +6,17 @@ use std::collections::HashSet;
 /// Parse sitemap_index.xml and extract all URLs
 pub fn parse_sitemap(base_url: &str, sitemap_path: &str) -> Result<Vec<String>> {
     let sitemap_url = format!("{}/{}", base_url.trim_end_matches('/'), sitemap_path);
-    
+
     let response = reqwest::blocking::get(&sitemap_url)
         .context(format!("Failed to fetch sitemap from {}", sitemap_url))?;
-    
-    let content = response.text()
-        .context("Failed to read sitemap content")?;
-    
+
+    let content = response.text().context("Failed to read sitemap content")?;
+
     let mut urls = HashSet::new();
-    
+
     // First, check if this is a sitemap index
     let sitemap_urls = parse_sitemap_index(&content)?;
-    
+
     if !sitemap_urls.is_empty() {
         // This is a sitemap index, parse each referenced sitemap
         println!("Found {} sitemap(s) in index", sitemap_urls.len());
@@ -36,7 +35,7 @@ pub fn parse_sitemap(base_url: &str, sitemap_path: &str) -> Result<Vec<String>> 
         // This is a regular sitemap, parse URLs directly
         urls.extend(parse_url_set(&content)?);
     }
-    
+
     Ok(urls.into_iter().collect())
 }
 
@@ -44,11 +43,11 @@ pub fn parse_sitemap(base_url: &str, sitemap_path: &str) -> Result<Vec<String>> 
 fn parse_sitemap_index(content: &str) -> Result<Vec<String>> {
     let mut reader = Reader::from_str(content);
     reader.config_mut().trim_text(true);
-    
+
     let mut urls = Vec::new();
     let mut buf = Vec::new();
     let mut in_loc = false;
-    
+
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) if e.name().as_ref() == b"loc" => {
@@ -70,18 +69,17 @@ fn parse_sitemap_index(content: &str) -> Result<Vec<String>> {
         }
         buf.clear();
     }
-    
+
     Ok(urls)
 }
 
 /// Fetch and parse a sitemap URL
 fn fetch_and_parse_sitemap(url: &str) -> Result<Vec<String>> {
-    let response = reqwest::blocking::get(url)
-        .context(format!("Failed to fetch sitemap from {}", url))?;
-    
-    let content = response.text()
-        .context("Failed to read sitemap content")?;
-    
+    let response =
+        reqwest::blocking::get(url).context(format!("Failed to fetch sitemap from {}", url))?;
+
+    let content = response.text().context("Failed to read sitemap content")?;
+
     parse_url_set(&content)
 }
 
@@ -89,11 +87,11 @@ fn fetch_and_parse_sitemap(url: &str) -> Result<Vec<String>> {
 fn parse_url_set(content: &str) -> Result<Vec<String>> {
     let mut reader = Reader::from_str(content);
     reader.config_mut().trim_text(true);
-    
+
     let mut urls = Vec::new();
     let mut buf = Vec::new();
     let mut in_loc = false;
-    
+
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) if e.name().as_ref() == b"loc" => {
@@ -115,7 +113,7 @@ fn parse_url_set(content: &str) -> Result<Vec<String>> {
         }
         buf.clear();
     }
-    
+
     Ok(urls)
 }
 
@@ -134,7 +132,7 @@ mod tests {
         <loc>https://example.com/sitemap2.xml</loc>
     </sitemap>
 </sitemapindex>"#;
-        
+
         let urls = parse_sitemap_index(xml).unwrap();
         assert_eq!(urls.len(), 2);
         assert_eq!(urls[0], "https://example.com/sitemap1.xml");
@@ -152,7 +150,7 @@ mod tests {
         <loc>https://example.com/page2/</loc>
     </url>
 </urlset>"#;
-        
+
         let urls = parse_url_set(xml).unwrap();
         assert_eq!(urls.len(), 2);
         assert_eq!(urls[0], "https://example.com/page1/");

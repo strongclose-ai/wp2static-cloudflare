@@ -1,6 +1,6 @@
-mod sitemap;
-mod scraper;
 mod asset_detector;
+mod scraper;
+mod sitemap;
 
 use anyhow::Result;
 use clap::Parser;
@@ -43,7 +43,7 @@ fn main() -> Result<()> {
     println!("\n=== Scraping pages...");
     for (index, url) in urls.iter().enumerate() {
         println!("[{}/{}] Processing: {}", index + 1, urls.len(), url);
-        
+
         match scraper::scrape_page(url, &args.base_url, &args.output_dir) {
             Ok(markdown_path) => {
                 println!("  ✓ Saved to: {}", markdown_path.display());

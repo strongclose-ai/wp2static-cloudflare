@@ -1,4 +1,7 @@
-mod asset_detector;
+// CDN migration feature - currently disabled
+// #[cfg(feature = "cdn-migration")]
+// mod asset_detector;
+
 mod scraper;
 mod sitemap;
 
@@ -10,13 +13,13 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Parser, Debug)]
 #[command(name = "wp2static_scraper")]
-#[command(about = "A Rust scraper for WP2Static that converts pages to markdown", long_about = None)]
+#[command(about = "A Rust scraper for WP2Static that saves static HTML pages", long_about = None)]
 struct Args {
     /// Base URL of the WordPress site
     #[arg(short, long)]
     base_url: String,
 
-    /// Output directory for markdown files
+    /// Output directory for static HTML files
     #[arg(short, long, default_value = "output")]
     output_dir: PathBuf,
 
@@ -78,11 +81,11 @@ fn main() -> Result<()> {
                 let progress = format!("[{}/{}]", index + 1, urls.len());
 
                 match scraper::scrape_page(url, &args.base_url, &args.output_dir) {
-                    Ok(markdown_path) => {
+                    Ok(html_path) => {
                         success_count.fetch_add(1, Ordering::Relaxed);
                         // Lock stdout to prevent interleaved output
                         let _lock = output_lock.lock().unwrap();
-                        println!("{} ✓ {}", progress, markdown_path.display());
+                        println!("{} ✓ {}", progress, html_path.display());
                     }
                     Err(e) => {
                         error_count.fetch_add(1, Ordering::Relaxed);
@@ -109,7 +112,7 @@ fn main() -> Result<()> {
         "Average: {:.2} pages/sec",
         urls.len() as f64 / elapsed.max(0.001)
     );
-    println!("Markdown files saved to: {}", args.output_dir.display());
+    println!("HTML files saved to: {}", args.output_dir.display());
 
     Ok(())
 }

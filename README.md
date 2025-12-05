@@ -43,12 +43,12 @@ Deploy your static WordPress site to Cloudflare R2 via a custom API. This featur
 
 ## Rust Scraper
 
-A high-performance Rust-based scraper that replaces the PHP scraping logic. The scraper:
+A high-performance Rust-based scraper that **replaces the PHP scraping logic entirely**. The scraper:
 
 - Parses sitemap files (`sitemap_index.xml`) to discover all pages
-- Extracts main content using text density analysis
-- Converts pages to Markdown format
-- Detects self-hosted JavaScript and CSS assets
+- Fetches pages and saves them as static HTML files
+- Supports parallel processing for high performance
+- Fully integrates with the WP2Static workflow
 
 [Read the Rust Scraper Documentation](./scraper/README.md)
 
@@ -62,7 +62,7 @@ cargo build --release
 # Run the scraper
 ./target/release/wp2static_scraper \
   --base-url "https://your-site.com" \
-  --output-dir "markdown_output"
+  --output-dir "output"
 ```
 
 ### Contributing

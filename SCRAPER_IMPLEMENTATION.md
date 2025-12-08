@@ -150,7 +150,8 @@ output/markdown/
 ├── about/
 │   └── index.md          # /about/ content
 └── blog/
-    └── post.md           # /blog/post/ content
+    └── post/
+        └── index.md      # /blog/post/ content
 ```
 
 Each markdown file includes:
@@ -238,11 +239,3 @@ The Rust scraper now **completely replaces the PHP scraping logic** with dual ou
 - Integrates seamlessly with the WordPress plugin workflow
 
 The scraper is production-ready and can be used as a complete replacement for the PHP Crawler by setting the crawler slug to 'rust-scraper'.
-
-- Generates static HTML files directly (no conversion needed)
-- Follows the same path transformation rules as the PHP Crawler
-- Outputs to the same StaticSite directory structure
-- Supports parallel processing for significantly better performance
-- Integrates seamlessly with the WordPress plugin workflow
-
-The scraper is production-ready and can be used as a drop-in replacement for the PHP Crawler by setting the crawler slug to 'rust-scraper'.

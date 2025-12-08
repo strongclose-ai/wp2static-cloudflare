@@ -118,7 +118,8 @@ output/markdown/
 │   └── index.md          # /about/ content
 ├── blog/
 │   ├── 2024/
-│   │   └── my-post.md    # /blog/2024/my-post/ content
+│   │   └── my-post/
+│   │       └── index.md  # /blog/2024/my-post/ content
 │   └── index.md          # /blog/ content
 └── page.md               # /page.html content
 ```

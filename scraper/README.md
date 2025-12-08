@@ -1,15 +1,18 @@
 # WP2Static Rust Scraper
 
-A high-performance Rust-based web scraper that replaces the PHP scraping logic in WP2Static. This scraper extracts content from WordPress sites based on sitemap files and converts pages to Markdown format.
+A high-performance Rust-based web scraper that **completely replaces the PHP scraping logic** in WP2Static. This scraper fetches pages from WordPress sites and generates both static HTML files and markdown content.
 
 ## Features
 
 - **Sitemap Parsing**: Automatically parses `sitemap_index.xml` and extracts all page URLs
-- **Content Extraction**: Uses the `dom-content-extraction` library to intelligently extract main content from HTML pages
-- **Markdown Conversion**: Converts extracted HTML content to clean Markdown format
-- **Asset Detection**: Detects self-hosted JavaScript and CSS files (with stub for future CDN migration)
+- **Dual Output**: Generates both static HTML files and markdown content from each page
+  - **HTML files**: Saved to output root for the static site
+  - **Markdown files**: Saved to `markdown/` subdirectory with extracted content and asset metadata
+- **Content Extraction**: Uses intelligent text density analysis to extract main content
+- **Asset Detection**: Detects self-hosted JavaScript and CSS files with metadata in markdown
 - **Parallel Processing**: Concurrent scraping with configurable worker threads for maximum performance
 - **PHP Integration**: Seamlessly integrates with WordPress via PHP's `exec()` function for easy deployment
+- **Compatible with WP2Static**: Follows the same file structure conventions as the PHP Crawler
 
 ## Building
 
@@ -42,7 +45,9 @@ WP2Static\RustScraper::wp2staticCrawl($static_site_path, 'rust-scraper');
 ### Arguments
 
 - `--base-url` or `-b`: The base URL of the WordPress site (required)
-- `--output-dir` or `-o`: Output directory for markdown files (default: "output")
+- `--output-dir` or `-o`: Output directory for static files (default: "output")
+  - HTML files go to the root of this directory
+  - Markdown files go to `markdown/` subdirectory
 - `--sitemap` or `-s`: Path to sitemap file relative to base URL (default: "sitemap_index.xml")
 - `--concurrency` or `-c`: Number of concurrent workers (default: 4, recommended: 4-8)
 
@@ -52,12 +57,12 @@ WP2Static\RustScraper::wp2staticCrawl($static_site_path, 'rust-scraper');
 # Scrape a WordPress site with 4 workers (default)
 ./target/release/wp2static_scraper \
   --base-url "https://myblog.com" \
-  --output-dir "markdown_output"
+  --output-dir "static_output"
 
 # Scrape with 8 workers for better performance on large sites
 ./target/release/wp2static_scraper \
   --base-url "https://myblog.com" \
-  --output-dir "markdown_output" \
+  --output-dir "static_output" \
   --concurrency 8
 ```
 
@@ -65,9 +70,8 @@ This will:
 1. Fetch and parse `https://myblog.com/sitemap_index.xml`
 2. Extract all URLs from the sitemap(s)
 3. Scrape pages in parallel using multiple workers
-4. Extract the main content using text density analysis
-5. Convert to Markdown
-6. Save each page as a `.md` file in `markdown_output/`
+4. Save HTML files to `static_output/`
+5. Save markdown files to `static_output/markdown/`
 
 ## Performance
 
@@ -86,60 +90,46 @@ Performance benchmarks (approximate):
 
 ## Output Structure
 
-The scraper preserves the URL structure of your site:
+The scraper generates two types of output:
+
+### Static HTML Files
+Located in the output root, matching the PHP Crawler behavior:
 
 ```
 output/
-├── index.md              # Homepage (/)
+├── index.html            # Homepage (/)
 ├── about/
-│   └── index.md          # /about/
+│   └── index.html        # /about/
 ├── blog/
 │   ├── 2024/
 │   │   └── my-post/
-│   │       └── index.md  # /blog/2024/my-post/
-│   └── index.md          # /blog/
-└── contact.md            # /contact.html
+│   │       └── index.html  # /blog/2024/my-post/
+│   └── index.html        # /blog/
+└── page.html             # /page.html
 ```
 
-## Asset Detection
+### Markdown Files
+Located in the `markdown/` subdirectory with extracted content and metadata:
 
-Each markdown file includes comments with detected assets:
-
-```markdown
-<!-- Source URL: https://example.com/page/ -->
-<!-- Detected Assets:
-  - https://example.com/wp-content/themes/mytheme/style.css (Type: CSS)
-  - https://example.com/wp-includes/js/jquery.js (Type: JavaScript)
--->
-
-# Page Title
-
-Page content here...
+```
+output/markdown/
+├── index.md              # Homepage content
+├── about/
+│   └── index.md          # /about/ content
+├── blog/
+│   ├── 2024/
+│   │   └── my-post/
+│   │       └── index.md  # /blog/2024/my-post/ content
+│   └── index.md          # /blog/ content
+└── page.md               # /page.html content
 ```
 
-### CDN Migration (Stub)
+Each markdown file includes:
+- Source URL metadata
+- Detected self-hosted assets (CSS/JS)
+- Extracted main content converted to markdown
 
-The asset detector identifies self-hosted JS/CSS files. The actual CDN migration logic is stubbed out in `src/asset_detector.rs` under the `migrate_to_cdn` method. This will be implemented once the CDN API details are provided.
-
-## Architecture
-
-The scraper is organized into three main modules:
-
-1. **sitemap.rs**: Parses XML sitemaps and extracts URLs
-2. **scraper.rs**: Fetches pages, extracts content, and saves as Markdown
-3. **asset_detector.rs**: Detects self-hosted JavaScript and CSS assets
-
-## Testing
-
-Run the test suite:
-
-```bash
-cargo test
-```
-
-## Example Output
-
-When scraping a WordPress page, the scraper produces markdown with metadata:
+### Example Markdown Output
 
 ```markdown
 <!-- Source URL: https://example.com/blog/my-post/ -->
@@ -151,14 +141,23 @@ When scraping a WordPress page, the scraper produces markdown with metadata:
 # My Blog Post
 
 This is the main content of the blog post, extracted intelligently
-using text density analysis.
+using text density analysis...
+```
 
-The scraper automatically identifies the main content area and ignores
-navigation, sidebars, footers, and other peripheral elements.
+## Architecture
 
-## A Subheading
+The scraper is organized into three main modules:
 
-More content here...
+1. **sitemap.rs**: Parses XML sitemaps and extracts URLs
+2. **scraper.rs**: Fetches pages and generates both HTML and markdown files
+3. **asset_detector.rs**: Detects self-hosted JavaScript and CSS assets
+
+## Testing
+
+Run the test suite:
+
+```bash
+cargo test
 ```
 
 ## Dependencies
@@ -167,9 +166,11 @@ More content here...
 - `scraper`: HTML parsing and CSS selector support
 - `dom-content-extraction`: Intelligent content extraction via text density analysis
 - `html2md`: HTML to Markdown conversion
+- `url`: URL parsing and manipulation
 - `quick-xml`: XML parsing for sitemaps
 - `clap`: Command-line argument parsing
 - `anyhow`: Error handling
+- `rayon`: Parallel processing
 
 ## License
 
@@ -188,8 +189,9 @@ Contributions are welcome! When contributing to the Rust scraper:
 
 The following features are planned for future development:
 
-- **CDN Migration**: Implement the `migrate_to_cdn` function once API details are provided
+- **CDN Migration**: Implement actual CDN upload and migration using the asset detection data
 - **Progress Bars**: Add visual progress bars using `indicatif` or similar
 - **Error Recovery**: Implement retry logic for failed page fetches
 - **Configuration File**: Support for configuration files to store common options
+- **Crawl Caching**: Add support for crawl caching to skip unchanged pages
 

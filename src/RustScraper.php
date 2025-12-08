@@ -6,7 +6,7 @@ namespace WP2Static;
  * RustScraper - High-performance scraper using Rust binary
  *
  * This class provides an interface to execute the Rust-based scraper
- * which converts WordPress pages to Markdown format.
+ * which generates both static HTML files and markdown content from WordPress pages.
  */
 class RustScraper {
 
@@ -30,13 +30,13 @@ class RustScraper {
             return;
         }
 
-        WsLog::l( 'Starting Rust scraper for markdown conversion' );
+        WsLog::l( 'Starting Rust scraper for static HTML and markdown generation' );
 
         // Get the base URL of the site
         $base_url = SiteInfo::getURL( 'site' );
 
-        // Prepare output directory for markdown files
-        $output_dir = $static_site_path . '/markdown';
+        // Output directly to the StaticSite path
+        $output_dir = $static_site_path;
         if ( ! file_exists( $output_dir ) ) {
             wp_mkdir_p( $output_dir );
         }
@@ -90,10 +90,8 @@ class RustScraper {
         }
 
         WsLog::l( 'Rust scraper completed successfully' );
-        WsLog::l( 'Markdown files saved to: ' . $output_dir );
-
-        // Post-process: Copy markdown files to the static site path if needed
-        self::postProcessMarkdown( $output_dir, $static_site_path );
+        WsLog::l( 'Static HTML files saved to: ' . $output_dir );
+        WsLog::l( 'Markdown files saved to: ' . $output_dir . '/markdown/' );
     }
 
     /**
@@ -195,41 +193,6 @@ class RustScraper {
         } else {
             WsLog::l( 'Failed to build Rust scraper binary. Exit code: ' . $return_var );
         }
-    }
-
-    /**
-     * Post-process markdown files
-     *
-     * Optionally convert markdown back to HTML or move files as needed
-     *
-     * @param string $markdown_dir Directory containing markdown files
-     * @param string $static_site_path Static site path
-     * @return void
-     */
-    private static function postProcessMarkdown( string $markdown_dir, string $static_site_path ) : void {
-        // For now, just log the location
-        // Future enhancement: convert markdown back to HTML if needed
-        WsLog::l( 'Post-processing markdown files from: ' . $markdown_dir );
-        
-        // Check if directory exists and is readable
-        if ( ! is_dir( $markdown_dir ) || ! is_readable( $markdown_dir ) ) {
-            WsLog::l( 'Markdown directory not found or not readable: ' . $markdown_dir );
-            return;
-        }
-
-        // Count files
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator( $markdown_dir, \RecursiveDirectoryIterator::SKIP_DOTS )
-        );
-        
-        $count = 0;
-        foreach ( $iterator as $file ) {
-            if ( $file->isFile() && $file->getExtension() === 'md' ) {
-                $count++;
-            }
-        }
-        
-        WsLog::l( 'Generated ' . $count . ' markdown files' );
     }
 
     /**
